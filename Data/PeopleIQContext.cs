@@ -82,14 +82,14 @@ public class PeopleIQContext : DbContext
             
             // Seed data
             entity.HasData(
-                new Department { Id = 1, Name = "Corporate", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 2, Name = "SISCO", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 3, Name = "Captives", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 4, Name = "Transportation", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 5, Name = "Benefits", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 6, Name = "BCC", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 7, Name = "CBCS", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new Department { Id = 8, Name = "Wellness", IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+                new Department { Id = 1, Name = "Corporate", Sort = 1, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 2, Name = "SISCO", Sort = 2, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 3, Name = "Captives", Sort = 3, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 4, Name = "Transportation", Sort = 4, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 5, Name = "Benefits", Sort = 5, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 6, Name = "BCC", Sort = 6, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 7, Name = "CBCS", Sort = 7, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new Department { Id = 8, Name = "Wellness", Sort = 8, IsActive = true, CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
         });
 

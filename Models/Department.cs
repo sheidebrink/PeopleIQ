@@ -13,6 +13,8 @@ public class Department
     [StringLength(500)]
     public string? Description { get; set; }
     
+    public int Sort { get; set; } = 0;
+    
     public bool IsActive { get; set; } = true;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

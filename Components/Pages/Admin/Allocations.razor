@@ -52,7 +52,12 @@
                             @foreach (var user in expertiseGroup.Users)
                             {
                                 <tr>
-                                    <td style="position: sticky; left: 0; background: white; z-index: 5; font-weight: 500; border-right: 2px solid #ddd; padding: 8px;">@user.FirstName @user.LastName</td>
+                                    <td style="position: sticky; left: 0; background: white; z-index: 5; font-weight: 500; border-right: 2px solid #ddd; padding: 8px;">
+                                        @user.FirstName @user.LastName
+                                        <span style="color: @GetTotalColor(GetPersonTotal(user.Id)); margin-left: 8px; font-size: 0.9em;">
+                                            (@GetPersonTotal(user.Id)%)
+                                        </span>
+                                    </td>
                                     @foreach (var dept in departmentGroups)
                                     {
                                         @foreach (var project in dept.Projects.OrderBy(p => p.Sort))
@@ -169,16 +174,17 @@
         // Load projects grouped by department
         var projects = await Context.Projects
             .Include(p => p.Department)
-            .OrderBy(p => p.Department.Name)
+            .OrderBy(p => p.Department.Sort)
             .ThenBy(p => p.Sort)
             .ToListAsync();
 
         departmentGroups = projects
             .GroupBy(p => p.Department?.Name ?? "No Department")
+            .OrderBy(g => projects.Where(p => (p.Department?.Name ?? "No Department") == g.Key).FirstOrDefault()?.Department?.Sort ?? 999)
             .Select(g => new DepartmentGroup
             {
                 Name = g.Key,
-                Projects = g.ToList()
+                Projects = g.OrderBy(p => p.Sort).ToList()
             })
             .ToList();
     }
@@ -228,5 +234,22 @@
             await Context.SaveChangesAsync();
             Snackbar.Add("Allocation updated", Severity.Success);
         }
+        
+        StateHasChanged();
+    }
+
+    private int GetPersonTotal(int userId)
+    {
+        return allocations.Where(a => a.UserId == userId).Sum(a => a.Percentage);
+    }
+
+    private string GetTotalColor(int total)
+    {
+        return total switch
+        {
+            > 100 => "red",
+            100 => "green",
+            _ => "orange"
+        };
     }
 }
