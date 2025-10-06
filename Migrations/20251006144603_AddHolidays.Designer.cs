@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PeopleIQ.Data;
 
@@ -10,9 +11,11 @@ using PeopleIQ.Data;
 namespace PeopleIQ.Migrations
 {
     [DbContext(typeof(PeopleIQContext))]
-    partial class PeopleIQContextModelSnapshot : ModelSnapshot
+    [Migration("20251006144603_AddHolidays")]
+    partial class AddHolidays
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");

@@ -1,0 +1,150 @@
+@page "/admin/expertise"
+@using PeopleIQ.Data
+@inject PeopleIQContext Context
+@inject ISnackbar Snackbar
+
+<PageTitle>Manage Expertise</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Manage Expertise Areas</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Add New Expertise</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTextField @bind-Value="newExpertise.Name" Label="Expertise Name" Required="true" />
+                <MudTextField @bind-Value="newExpertise.Description" Label="Description" Lines="3" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddExpertise">Add Expertise</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Existing Expertise Areas</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="expertiseAreas" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Description</MudTh>
+                        <MudTh>Users</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Description">@context.Description</MudTd>
+                        <MudTd DataLabel="Users">@context.Users.Count</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="() => EditExpertise(context)" />
+                            <MudIconButton Icon="Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteExpertise(context.Id)" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudDialog @bind-Visible="showEditDialog">
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">Edit Expertise</MudText>
+        <MudTextField @bind-Value="editingExpertise.Name" Label="Expertise Name" Required="true" />
+        <MudTextField @bind-Value="editingExpertise.Description" Label="Description" Lines="3" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelEdit">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveExpertise">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<PeopleIQ.Models.Expertise> expertiseAreas = new();
+    private PeopleIQ.Models.Expertise newExpertise = new();
+    private PeopleIQ.Models.Expertise editingExpertise = new();
+    private bool showEditDialog = false;
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await LoadExpertise();
+    }
+
+    private async System.Threading.Tasks.Task LoadExpertise()
+    {
+        expertiseAreas = await Context.Expertises
+            .Include(e => e.Users)
+            .Where(e => e.IsActive)
+            .OrderBy(e => e.Name)
+            .ToListAsync();
+    }
+
+    private async System.Threading.Tasks.Task AddExpertise()
+    {
+        if (string.IsNullOrWhiteSpace(newExpertise.Name))
+        {
+            Snackbar.Add("Please enter an expertise name", Severity.Warning);
+            return;
+        }
+
+        Context.Expertises.Add(newExpertise);
+        await Context.SaveChangesAsync();
+        
+        Snackbar.Add("Expertise added successfully", Severity.Success);
+        newExpertise = new();
+        await LoadExpertise();
+    }
+
+    private void EditExpertise(PeopleIQ.Models.Expertise expertise)
+    {
+        editingExpertise = new PeopleIQ.Models.Expertise 
+        { 
+            Id = expertise.Id, 
+            Name = expertise.Name, 
+            Description = expertise.Description,
+            IsActive = expertise.IsActive,
+            CreatedAt = expertise.CreatedAt
+        };
+        showEditDialog = true;
+    }
+
+    private async System.Threading.Tasks.Task SaveExpertise()
+    {
+        var expertise = await Context.Expertises.FindAsync(editingExpertise.Id);
+        if (expertise != null)
+        {
+            expertise.Name = editingExpertise.Name;
+            expertise.Description = editingExpertise.Description;
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Expertise updated successfully", Severity.Success);
+            await LoadExpertise();
+        }
+        showEditDialog = false;
+    }
+
+    private void CancelEdit()
+    {
+        showEditDialog = false;
+        editingExpertise = new PeopleIQ.Models.Expertise();
+    }
+
+    private async System.Threading.Tasks.Task DeleteExpertise(int id)
+    {
+        var expertise = await Context.Expertises.FindAsync(id);
+        if (expertise != null)
+        {
+            expertise.IsActive = false;
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Expertise deleted successfully", Severity.Success);
+            await LoadExpertise();
+        }
+    }
+}

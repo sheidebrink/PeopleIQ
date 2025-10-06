@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PeopleIQ.Data;
 
@@ -10,9 +11,11 @@ using PeopleIQ.Data;
 namespace PeopleIQ.Migrations
 {
     [DbContext(typeof(PeopleIQContext))]
-    partial class PeopleIQContextModelSnapshot : ModelSnapshot
+    [Migration("20251006143757_SeedProjects")]
+    partial class SeedProjects
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -100,123 +103,6 @@ namespace PeopleIQ.Migrations
                             CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
                             Name = "Wellness"
-                        });
-                });
-
-            modelBuilder.Entity("PeopleIQ.Models.Expertise", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Expertises");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Name = "QA"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Name = "Software"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Name = "Data"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Name = "Automation"
-                        });
-                });
-
-            modelBuilder.Entity("PeopleIQ.Models.Holiday", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT")
-                        .HasDefaultValueSql("datetime('now')");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsRecurring")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Holidays");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Date = new DateTime(2025, 11, 27, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsRecurring = true,
-                            Name = "Thanksgiving"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Date = new DateTime(2025, 11, 28, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsRecurring = true,
-                            Name = "Thanksgiving"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Date = new DateTime(2025, 12, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsRecurring = true,
-                            Name = "Christmas"
                         });
                 });
 
@@ -769,9 +655,6 @@ namespace PeopleIQ.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("ExpertiseId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -801,141 +684,7 @@ namespace PeopleIQ.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("ExpertiseId");
-
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "kim@peopleiq.com",
-                            ExpertiseId = 1,
-                            FirstName = "Kim",
-                            IsActive = true,
-                            LastName = "Smith"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "david@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "David",
-                            IsActive = true,
-                            LastName = "Johnson"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "george@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "George",
-                            IsActive = true,
-                            LastName = "Williams"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "steve@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Steve",
-                            IsActive = true,
-                            LastName = "Brown"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "isaac@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Isaac",
-                            IsActive = true,
-                            LastName = "Davis"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "josh@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Josh",
-                            IsActive = true,
-                            LastName = "Miller"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "blake@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Blake",
-                            IsActive = true,
-                            LastName = "Wilson"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "keegan@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Keegan",
-                            IsActive = true,
-                            LastName = "Moore"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "bryce@peopleiq.com",
-                            ExpertiseId = 2,
-                            FirstName = "Bryce",
-                            IsActive = true,
-                            LastName = "Taylor"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "jillian@peopleiq.com",
-                            ExpertiseId = 4,
-                            FirstName = "Jillian",
-                            IsActive = true,
-                            LastName = "Anderson"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "chloe@peopleiq.com",
-                            ExpertiseId = 4,
-                            FirstName = "Chloe",
-                            IsActive = true,
-                            LastName = "Thomas"
-                        },
-                        new
-                        {
-                            Id = 12,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "jeff@peopleiq.com",
-                            ExpertiseId = 3,
-                            FirstName = "Jeff",
-                            IsActive = true,
-                            LastName = "Jackson"
-                        },
-                        new
-                        {
-                            Id = 13,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "dan@peopleiq.com",
-                            ExpertiseId = 3,
-                            FirstName = "Dan",
-                            IsActive = true,
-                            LastName = "White"
-                        });
                 });
 
             modelBuilder.Entity("PeopleIQ.Models.Project", b =>
@@ -993,24 +742,9 @@ namespace PeopleIQ.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("PeopleIQ.Models.User", b =>
-                {
-                    b.HasOne("PeopleIQ.Models.Expertise", "Expertise")
-                        .WithMany("Users")
-                        .HasForeignKey("ExpertiseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Expertise");
-                });
-
             modelBuilder.Entity("PeopleIQ.Models.Department", b =>
                 {
                     b.Navigation("Projects");
-                });
-
-            modelBuilder.Entity("PeopleIQ.Models.Expertise", b =>
-                {
-                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("PeopleIQ.Models.Project", b =>

@@ -1,0 +1,103 @@
+@page "/admin/holidays"
+@using PeopleIQ.Data
+@using PeopleIQ.Models
+@inject PeopleIQContext Context
+@inject ISnackbar Snackbar
+
+<PageTitle>Manage Holidays</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Manage Holidays</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Add New Holiday</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTextField @bind-Value="newHoliday.Name" Label="Holiday Name" Required="true" />
+                <MudDatePicker @bind-Date="holidayDate" Label="Date" Required="true" />
+                <MudCheckBox @bind-Value="newHoliday.IsRecurring" Label="Recurring Annually" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddHoliday">Add Holiday</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Existing Holidays</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="holidays" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Recurring</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Name">@context.Name</MudTd>
+                        <MudTd DataLabel="Date">@context.Date.ToString("MMM dd, yyyy")</MudTd>
+                        <MudTd DataLabel="Recurring">@(context.IsRecurring ? "Yes" : "No")</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteHoliday(context.Id)" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<Holiday> holidays = new();
+    private Holiday newHoliday = new();
+    private DateTime? holidayDate;
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await LoadHolidays();
+    }
+
+    private async System.Threading.Tasks.Task LoadHolidays()
+    {
+        holidays = await Context.Holidays.Where(h => h.IsActive).OrderBy(h => h.Date).ToListAsync();
+    }
+
+    private async System.Threading.Tasks.Task AddHoliday()
+    {
+        if (string.IsNullOrWhiteSpace(newHoliday.Name) || !holidayDate.HasValue)
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        newHoliday.Date = holidayDate.Value;
+        Context.Holidays.Add(newHoliday);
+        await Context.SaveChangesAsync();
+        
+        Snackbar.Add("Holiday added successfully", Severity.Success);
+        newHoliday = new();
+        holidayDate = null;
+        await LoadHolidays();
+    }
+
+    private async System.Threading.Tasks.Task DeleteHoliday(int id)
+    {
+        var holiday = await Context.Holidays.FindAsync(id);
+        if (holiday != null)
+        {
+            holiday.IsActive = false;
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Holiday deleted successfully", Severity.Success);
+            await LoadHolidays();
+        }
+    }
+}
