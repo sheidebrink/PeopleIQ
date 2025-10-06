@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PeopleIQ.Data;
 
@@ -10,9 +11,11 @@ using PeopleIQ.Data;
 namespace PeopleIQ.Migrations
 {
     [DbContext(typeof(PeopleIQContext))]
-    partial class PeopleIQContextModelSnapshot : ModelSnapshot
+    [Migration("20251006145312_AddAllocations")]
+    partial class AddAllocations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.9");
@@ -54,28 +57,6 @@ namespace PeopleIQ.Migrations
                         .IsUnique();
 
                     b.ToTable("Allocations");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Month = 10,
-                            Percentage = 15,
-                            ProjectId = 20,
-                            UserId = 1,
-                            Year = 2025
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Month = 10,
-                            Percentage = 15,
-                            ProjectId = 26,
-                            UserId = 1,
-                            Year = 2025
-                        });
                 });
 
             modelBuilder.Entity("PeopleIQ.Models.Department", b =>

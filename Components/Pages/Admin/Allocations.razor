@@ -1,0 +1,178 @@
+@page "/admin/allocations"
+@using PeopleIQ.Data
+@inject PeopleIQContext Context
+@inject ISnackbar Snackbar
+
+<PageTitle>Manage Allocations</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Manage Team Allocations</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Add New Allocation</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudSelect @bind-Value="newAllocation.Month" Label="Month" Required="true">
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <MudSelectItem Value="i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField @bind-Value="newAllocation.Year" Label="Year" Required="true" Min="2024" Max="2030" />
+                <MudSelect @bind-Value="newAllocation.ProjectId" Label="Project" Required="true">
+                    @foreach (var project in projects)
+                    {
+                        <MudSelectItem Value="project.Id">@project.Name</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudSelect @bind-Value="newAllocation.UserId" Label="Team Member" Required="true">
+                    @foreach (var user in users)
+                    {
+                        <MudSelectItem Value="user.Id">@user.FirstName @user.LastName</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField @bind-Value="newAllocation.Percentage" Label="Allocation %" Required="true" Min="0" Max="100" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddAllocation">Add Allocation</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="6">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Filter Allocations</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudSelect @bind-Value="filterMonth" Label="Filter by Month">
+                    <MudSelectItem Value="0">All Months</MudSelectItem>
+                    @for (int i = 1; i <= 12; i++)
+                    {
+                        <MudSelectItem Value="i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudNumericField @bind-Value="filterYear" Label="Filter by Year" Min="2024" Max="2030" />
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="LoadAllocations">Apply Filter</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudCard Class="mt-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Current Allocations</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTable Items="allocations" Hover="true">
+            <HeaderContent>
+                <MudTh>Month/Year</MudTh>
+                <MudTh>Project</MudTh>
+                <MudTh>Team Member</MudTh>
+                <MudTh>Allocation %</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Month/Year">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(context.Month) @context.Year</MudTd>
+                <MudTd DataLabel="Project">@context.Project.Name</MudTd>
+                <MudTd DataLabel="Team Member">@context.User.FirstName @context.User.LastName</MudTd>
+                <MudTd DataLabel="Allocation %">@context.Percentage%</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAllocation(context.Id)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<PeopleIQ.Models.Allocation> allocations = new();
+    private List<PeopleIQ.Models.Project> projects = new();
+    private List<PeopleIQ.Models.User> users = new();
+    private PeopleIQ.Models.Allocation newAllocation = new();
+    private int filterMonth = 0;
+    private int filterYear = DateTime.Now.Year;
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await LoadProjects();
+        await LoadUsers();
+        await LoadAllocations();
+    }
+
+    private async System.Threading.Tasks.Task LoadProjects()
+    {
+        projects = await Context.Projects.OrderBy(p => p.Name).ToListAsync();
+    }
+
+    private async System.Threading.Tasks.Task LoadUsers()
+    {
+        users = await Context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
+    }
+
+    private async System.Threading.Tasks.Task LoadAllocations()
+    {
+        var query = Context.Allocations
+            .Include(a => a.Project)
+            .Include(a => a.User)
+            .AsQueryable();
+
+        if (filterMonth > 0)
+            query = query.Where(a => a.Month == filterMonth);
+            
+        if (filterYear > 0)
+            query = query.Where(a => a.Year == filterYear);
+
+        allocations = await query.OrderBy(a => a.Year).ThenBy(a => a.Month).ThenBy(a => a.Project.Name).ToListAsync();
+    }
+
+    private async System.Threading.Tasks.Task AddAllocation()
+    {
+        if (newAllocation.ProjectId == 0 || newAllocation.UserId == 0 || newAllocation.Month == 0 || newAllocation.Year == 0)
+        {
+            Snackbar.Add("Please fill in all required fields", Severity.Warning);
+            return;
+        }
+
+        var existing = await Context.Allocations
+            .FirstOrDefaultAsync(a => a.ProjectId == newAllocation.ProjectId && 
+                               a.UserId == newAllocation.UserId && 
+                               a.Month == newAllocation.Month && 
+                               a.Year == newAllocation.Year);
+
+        if (existing != null)
+        {
+            Snackbar.Add("Allocation already exists for this combination", Severity.Warning);
+            return;
+        }
+
+        Context.Allocations.Add(newAllocation);
+        await Context.SaveChangesAsync();
+        
+        Snackbar.Add("Allocation added successfully", Severity.Success);
+        newAllocation = new PeopleIQ.Models.Allocation();
+        await LoadAllocations();
+    }
+
+    private async System.Threading.Tasks.Task DeleteAllocation(int id)
+    {
+        var allocation = await Context.Allocations.FindAsync(id);
+        if (allocation != null)
+        {
+            Context.Allocations.Remove(allocation);
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Allocation deleted successfully", Severity.Success);
+            await LoadAllocations();
+        }
+    }
+}

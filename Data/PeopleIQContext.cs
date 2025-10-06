@@ -16,6 +16,7 @@ public class PeopleIQContext : DbContext
     public DbSet<Department> Departments { get; set; }
     public DbSet<Expertise> Expertises { get; set; }
     public DbSet<Holiday> Holidays { get; set; }
+    public DbSet<Allocation> Allocations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -207,6 +208,32 @@ public class PeopleIQContext : DbContext
                 new Holiday { Id = 1, Name = "Thanksgiving", Date = new DateTime(2025, 11, 27), IsRecurring = true, IsActive = true, CreatedAt = createdAt },
                 new Holiday { Id = 2, Name = "Thanksgiving", Date = new DateTime(2025, 11, 28), IsRecurring = true, IsActive = true, CreatedAt = createdAt },
                 new Holiday { Id = 3, Name = "Christmas", Date = new DateTime(2025, 12, 25), IsRecurring = true, IsActive = true, CreatedAt = createdAt }
+            );
+        });
+
+        // Allocation configuration
+        modelBuilder.Entity<Allocation>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            entity.HasIndex(e => new { e.ProjectId, e.UserId, e.Month, e.Year }).IsUnique();
+            
+            entity.HasOne(a => a.Project)
+                .WithMany()
+                .HasForeignKey(a => a.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            entity.HasOne(a => a.User)
+                .WithMany()
+                .HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+                
+            // Seed data
+            var createdAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            
+            entity.HasData(
+                // Kim's October 2025 allocations
+                new Allocation { Id = 1, Month = 10, Year = 2025, ProjectId = 20, UserId = 1, Percentage = 15, CreatedAt = createdAt }, // Client Iris
+                new Allocation { Id = 2, Month = 10, Year = 2025, ProjectId = 26, UserId = 1, Percentage = 15, CreatedAt = createdAt }  // Data Submission Page
             );
         });
     }
