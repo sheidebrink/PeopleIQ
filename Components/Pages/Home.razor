@@ -1,0 +1,158 @@
+﻿@page "/"
+@using PeopleIQ.Data
+@inject PeopleIQContext Context
+
+<PageTitle>Dashboard - PeopleIQ</PageTitle>
+
+<MudText Typo="Typo.h3" GutterBottom="true">Dashboard</MudText>
+<MudText Typo="Typo.body1" Class="mb-4">Welcome to PeopleIQ - Your Project Management Hub</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4">
+            <MudCardContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="Icons.Material.Filled.Work" Color="Color.Primary" Size="Size.Large" Class="mr-3" />
+                    <div>
+                        <MudText Typo="Typo.h4">@projectCount</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Active Projects</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4">
+            <MudCardContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="Icons.Material.Filled.Task" Color="Color.Secondary" Size="Size.Large" Class="mr-3" />
+                    <div>
+                        <MudText Typo="Typo.h4">@taskCount</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Total Tasks</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4">
+            <MudCardContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="Icons.Material.Filled.People" Color="Color.Success" Size="Size.Large" Class="mr-3" />
+                    <div>
+                        <MudText Typo="Typo.h4">@userCount</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Team Members</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2" Class="pa-4">
+            <MudCardContent>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Warning" Size="Size.Large" Class="mr-3" />
+                    <div>
+                        <MudText Typo="Typo.h4">@completedTaskCount</MudText>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">Completed Tasks</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudGrid Class="mt-4">
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Recent Projects</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @if (recentProjects.Any())
+                {
+                    <MudSimpleTable>
+                        @foreach (var project in recentProjects)
+                        {
+                            <tr>
+                                <td>
+                                    <MudText Typo="Typo.body1">@project.Name</MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">@project.Description</MudText>
+                                </td>
+                                <td>
+                                    <MudChip T="string" Color="GetStatusColor(project.Status)" Size="Size.Small">@project.Status</MudChip>
+                                </td>
+                            </tr>
+                        }
+                    </MudSimpleTable>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">No projects found. Create your first project to get started!</MudText>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Quick Actions</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudStack>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="Icons.Material.Filled.Add" FullWidth="true">
+                        New Project
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="Icons.Material.Filled.Task" FullWidth="true">
+                        Add Task
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="Icons.Material.Filled.PersonAdd" FullWidth="true">
+                        Invite Member
+                    </MudButton>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private int projectCount = 0;
+    private int taskCount = 0;
+    private int userCount = 0;
+    private int completedTaskCount = 0;
+    private List<PeopleIQ.Models.Project> recentProjects = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        projectCount = await Context.Projects.CountAsync();
+        taskCount = await Context.Tasks.CountAsync();
+        userCount = await Context.Users.CountAsync();
+        completedTaskCount = await Context.Tasks.CountAsync(t => t.Status == PeopleIQ.Models.TaskStatus.Completed);
+        
+        recentProjects = await Context.Projects
+            .OrderByDescending(p => p.CreatedAt)
+            .Take(5)
+            .ToListAsync();
+    }
+
+    private Color GetStatusColor(PeopleIQ.Models.ProjectStatus status)
+    {
+        return status switch
+        {
+            PeopleIQ.Models.ProjectStatus.Planning => Color.Info,
+            PeopleIQ.Models.ProjectStatus.InProgress => Color.Primary,
+            PeopleIQ.Models.ProjectStatus.OnHold => Color.Warning,
+            PeopleIQ.Models.ProjectStatus.Completed => Color.Success,
+            PeopleIQ.Models.ProjectStatus.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+}
