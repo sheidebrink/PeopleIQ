@@ -16,13 +16,12 @@
                 </CardHeaderContent>
             </MudCardHeader>
             <MudCardContent>
-                <MudSelect @bind-Value="newAllocation.Month" Label="Month" Required="true">
-                    @for (int i = 1; i <= 12; i++)
+                <MudSelect @bind-Value="selectedMonthId" Label="Month/Year" Required="true">
+                    @foreach (var month in allocationMonths)
                     {
-                        <MudSelectItem Value="i">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</MudSelectItem>
+                        <MudSelectItem Value="month.Id">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month.Month) @month.Year</MudSelectItem>
                     }
                 </MudSelect>
-                <MudNumericField @bind-Value="newAllocation.Year" Label="Year" Required="true" Min="2024" Max="2030" />
                 <MudSelect @bind-Value="newAllocation.ProjectId" Label="Project" Required="true">
                     @foreach (var project in projects)
                     {
@@ -83,7 +82,7 @@
                 <MudTh>Actions</MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Month/Year">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(context.Month) @context.Year</MudTd>
+                <MudTd DataLabel="Month/Year">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(context.AllocationMonth.Month) @context.AllocationMonth.Year</MudTd>
                 <MudTd DataLabel="Project">@context.Project.Name</MudTd>
                 <MudTd DataLabel="Team Member">@context.User.FirstName @context.User.LastName</MudTd>
                 <MudTd DataLabel="Allocation %">@context.Percentage%</MudTd>
@@ -99,7 +98,9 @@
     private List<PeopleIQ.Models.Allocation> allocations = new();
     private List<PeopleIQ.Models.Project> projects = new();
     private List<PeopleIQ.Models.User> users = new();
+    private List<PeopleIQ.Models.AllocationMonth> allocationMonths = new();
     private PeopleIQ.Models.Allocation newAllocation = new();
+    private int selectedMonthId = 0;
     private int filterMonth = 0;
     private int filterYear = DateTime.Now.Year;
 
@@ -107,6 +108,7 @@
     {
         await LoadProjects();
         await LoadUsers();
+        await LoadAllocationMonths();
         await LoadAllocations();
     }
 
@@ -120,35 +122,42 @@
         users = await Context.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ToListAsync();
     }
 
+    private async System.Threading.Tasks.Task LoadAllocationMonths()
+    {
+        allocationMonths = await Context.AllocationMonths.Where(am => am.IsActive).OrderBy(am => am.Year).ThenBy(am => am.Month).ToListAsync();
+    }
+
     private async System.Threading.Tasks.Task LoadAllocations()
     {
         var query = Context.Allocations
+            .Include(a => a.AllocationMonth)
             .Include(a => a.Project)
             .Include(a => a.User)
             .AsQueryable();
 
         if (filterMonth > 0)
-            query = query.Where(a => a.Month == filterMonth);
+            query = query.Where(a => a.AllocationMonth.Month == filterMonth);
             
         if (filterYear > 0)
-            query = query.Where(a => a.Year == filterYear);
+            query = query.Where(a => a.AllocationMonth.Year == filterYear);
 
-        allocations = await query.OrderBy(a => a.Year).ThenBy(a => a.Month).ThenBy(a => a.Project.Name).ToListAsync();
+        allocations = await query.OrderBy(a => a.AllocationMonth.Year).ThenBy(a => a.AllocationMonth.Month).ThenBy(a => a.Project.Name).ToListAsync();
     }
 
     private async System.Threading.Tasks.Task AddAllocation()
     {
-        if (newAllocation.ProjectId == 0 || newAllocation.UserId == 0 || newAllocation.Month == 0 || newAllocation.Year == 0)
+        if (newAllocation.ProjectId == 0 || newAllocation.UserId == 0 || selectedMonthId == 0)
         {
             Snackbar.Add("Please fill in all required fields", Severity.Warning);
             return;
         }
 
+        newAllocation.AllocationMonthId = selectedMonthId;
+
         var existing = await Context.Allocations
             .FirstOrDefaultAsync(a => a.ProjectId == newAllocation.ProjectId && 
                                a.UserId == newAllocation.UserId && 
-                               a.Month == newAllocation.Month && 
-                               a.Year == newAllocation.Year);
+                               a.AllocationMonthId == newAllocation.AllocationMonthId);
 
         if (existing != null)
         {
@@ -161,6 +170,7 @@
         
         Snackbar.Add("Allocation added successfully", Severity.Success);
         newAllocation = new PeopleIQ.Models.Allocation();
+        selectedMonthId = 0;
         await LoadAllocations();
     }
 

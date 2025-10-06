@@ -16,6 +16,7 @@ public class PeopleIQContext : DbContext
     public DbSet<Department> Departments { get; set; }
     public DbSet<Expertise> Expertises { get; set; }
     public DbSet<Holiday> Holidays { get; set; }
+    public DbSet<AllocationMonth> AllocationMonths { get; set; }
     public DbSet<Allocation> Allocations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -211,11 +212,39 @@ public class PeopleIQContext : DbContext
             );
         });
 
+        // AllocationMonth configuration
+        modelBuilder.Entity<AllocationMonth>(entity =>
+        {
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
+            entity.HasIndex(e => new { e.Month, e.Year }).IsUnique();
+            
+            // Seed data
+            var createdAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            
+            entity.HasData(
+                new AllocationMonth { Id = 1, Month = 1, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 2, Month = 2, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 3, Month = 3, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 4, Month = 4, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 5, Month = 5, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 6, Month = 6, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 7, Month = 7, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 8, Month = 8, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 9, Month = 9, Year = 2025, IsActive = true, CreatedAt = createdAt },
+                new AllocationMonth { Id = 10, Month = 10, Year = 2025, IsActive = true, CreatedAt = createdAt }
+            );
+        });
+
         // Allocation configuration
         modelBuilder.Entity<Allocation>(entity =>
         {
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("datetime('now')");
-            entity.HasIndex(e => new { e.ProjectId, e.UserId, e.Month, e.Year }).IsUnique();
+            entity.HasIndex(e => new { e.AllocationMonthId, e.ProjectId, e.UserId }).IsUnique();
+            
+            entity.HasOne(a => a.AllocationMonth)
+                .WithMany(am => am.Allocations)
+                .HasForeignKey(a => a.AllocationMonthId)
+                .OnDelete(DeleteBehavior.Cascade);
             
             entity.HasOne(a => a.Project)
                 .WithMany()
@@ -232,8 +261,8 @@ public class PeopleIQContext : DbContext
             
             entity.HasData(
                 // Kim's October 2025 allocations
-                new Allocation { Id = 1, Month = 10, Year = 2025, ProjectId = 20, UserId = 1, Percentage = 15, CreatedAt = createdAt }, // Client Iris
-                new Allocation { Id = 2, Month = 10, Year = 2025, ProjectId = 26, UserId = 1, Percentage = 15, CreatedAt = createdAt }  // Data Submission Page
+                new Allocation { Id = 1, AllocationMonthId = 10, ProjectId = 20, UserId = 1, Percentage = 15, CreatedAt = createdAt }, // Client Iris - October
+                new Allocation { Id = 2, AllocationMonthId = 10, ProjectId = 26, UserId = 1, Percentage = 15, CreatedAt = createdAt }  // Data Submission Page - October
             );
         });
     }

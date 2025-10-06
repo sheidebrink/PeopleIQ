@@ -8,16 +8,11 @@ public class Allocation
     public int Id { get; set; }
     
     [Required]
-    public int Month { get; set; }
-    
-    [Required]
-    public int Year { get; set; }
-    
-    [Required]
     [Range(0, 100)]
     public int Percentage { get; set; }
     
     // Foreign Keys
+    public int AllocationMonthId { get; set; }
     public int ProjectId { get; set; }
     public int UserId { get; set; }
     
@@ -25,6 +20,7 @@ public class Allocation
     public DateTime? UpdatedAt { get; set; }
     
     // Navigation properties
+    public AllocationMonth AllocationMonth { get; set; } = null!;
     public Project Project { get; set; } = null!;
     public User User { get; set; } = null!;
 }
