@@ -1,0 +1,221 @@
+@page "/admin/departments/{DepartmentId:int}"
+@using PeopleIQ.Data
+@inject PeopleIQContext Context
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>@department?.Name Projects</PageTitle>
+
+<MudBreadcrumbs Items="breadcrumbs" />
+
+<MudText Typo="Typo.h4" GutterBottom="true">@department?.Name Projects</MudText>
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="Icons.Material.Filled.Add" OnClick="AddNewProject">
+                Add Project
+            </MudButton>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTable Items="projects" Hover="true">
+            <HeaderContent>
+                <MudTh>Sort</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Priority</MudTh>
+                <MudTh>Progress</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Sort">@context.Sort</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Color="GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Priority">@context.Priority</MudTd>
+                <MudTd DataLabel="Progress">@context.Progress%</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="() => EditProject(context)" />
+                    <MudIconButton Icon="Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteProject(context.Id)" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+<MudDialog @bind-Visible="showProjectDialog">
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">@(editingProject.Id == 0 ? "Add New Project" : "Edit Project")</MudText>
+        <MudTextField @bind-Value="editingProject.Name" Label="Project Name" Required="true" />
+        <MudTextField @bind-Value="editingProject.Description" Label="Description" Lines="3" />
+        <MudNumericField @bind-Value="editingProject.Sort" Label="Sort Order" />
+        <MudSelect @bind-Value="editingProject.Status" Label="Status">
+            @foreach (var status in Enum.GetValues<PeopleIQ.Models.ProjectStatus>())
+            {
+                <MudSelectItem Value="status">@status</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect @bind-Value="editingProject.Priority" Label="Priority">
+            @foreach (var priority in Enum.GetValues<PeopleIQ.Models.ProjectPriority>())
+            {
+                <MudSelectItem Value="priority">@priority</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="editingProject.Progress" Label="Progress %" Min="0" Max="100" />
+        <MudDatePicker @bind-Date="startDate" Label="Start Date" />
+        <MudDatePicker @bind-Date="endDate" Label="End Date" />
+        <MudNumericField @bind-Value="editingProject.Budget" Label="Budget" Format="C" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelProject">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveProject">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int DepartmentId { get; set; }
+    
+    private PeopleIQ.Models.Department? department;
+    private List<PeopleIQ.Models.Project> projects = new();
+    private PeopleIQ.Models.Project editingProject = new();
+    private bool showProjectDialog = false;
+    private DateTime? startDate;
+    private DateTime? endDate;
+    
+    private List<BreadcrumbItem> breadcrumbs = new();
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await LoadDepartment();
+        SetupBreadcrumbs();
+    }
+
+    private async System.Threading.Tasks.Task LoadDepartment()
+    {
+        department = await Context.Departments.FindAsync(DepartmentId);
+        if (department != null)
+        {
+            projects = await Context.Projects
+                .Where(p => p.DepartmentId == DepartmentId)
+                .OrderBy(p => p.Sort)
+                .ToListAsync();
+        }
+    }
+    
+    private void SetupBreadcrumbs()
+    {
+        breadcrumbs = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Admin", "/admin/departments"),
+            new BreadcrumbItem("Departments", "/admin/departments"),
+            new BreadcrumbItem(department?.Name ?? "Department", null, true)
+        };
+    }
+
+    private void AddNewProject()
+    {
+        editingProject = new PeopleIQ.Models.Project 
+        { 
+            DepartmentId = DepartmentId,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddMonths(12)
+        };
+        startDate = editingProject.StartDate;
+        endDate = editingProject.EndDate;
+        showProjectDialog = true;
+    }
+
+    private void EditProject(PeopleIQ.Models.Project project)
+    {
+        editingProject = new PeopleIQ.Models.Project
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Sort = project.Sort,
+            Status = project.Status,
+            Priority = project.Priority,
+            Progress = project.Progress,
+            Budget = project.Budget,
+            DepartmentId = project.DepartmentId,
+            StartDate = project.StartDate,
+            EndDate = project.EndDate,
+            CreatedAt = project.CreatedAt
+        };
+        startDate = project.StartDate;
+        endDate = project.EndDate;
+        showProjectDialog = true;
+    }
+
+    private async System.Threading.Tasks.Task SaveProject()
+    {
+        if (string.IsNullOrWhiteSpace(editingProject.Name))
+        {
+            Snackbar.Add("Please enter a project name", Severity.Warning);
+            return;
+        }
+
+        editingProject.StartDate = startDate ?? DateTime.Now;
+        editingProject.EndDate = endDate;
+
+        if (editingProject.Id == 0)
+        {
+            Context.Projects.Add(editingProject);
+        }
+        else
+        {
+            var project = await Context.Projects.FindAsync(editingProject.Id);
+            if (project != null)
+            {
+                project.Name = editingProject.Name;
+                project.Description = editingProject.Description;
+                project.Sort = editingProject.Sort;
+                project.Status = editingProject.Status;
+                project.Priority = editingProject.Priority;
+                project.Progress = editingProject.Progress;
+                project.Budget = editingProject.Budget;
+                project.StartDate = editingProject.StartDate;
+                project.EndDate = editingProject.EndDate;
+                project.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Project saved successfully", Severity.Success);
+        showProjectDialog = false;
+        await LoadDepartment();
+    }
+
+    private void CancelProject()
+    {
+        showProjectDialog = false;
+        editingProject = new PeopleIQ.Models.Project();
+    }
+
+    private async System.Threading.Tasks.Task DeleteProject(int projectId)
+    {
+        var project = await Context.Projects.FindAsync(projectId);
+        if (project != null)
+        {
+            Context.Projects.Remove(project);
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Project deleted successfully", Severity.Success);
+            await LoadDepartment();
+        }
+    }
+
+    private Color GetStatusColor(PeopleIQ.Models.ProjectStatus status)
+    {
+        return status switch
+        {
+            PeopleIQ.Models.ProjectStatus.Planning => Color.Info,
+            PeopleIQ.Models.ProjectStatus.InProgress => Color.Primary,
+            PeopleIQ.Models.ProjectStatus.OnHold => Color.Warning,
+            PeopleIQ.Models.ProjectStatus.Completed => Color.Success,
+            PeopleIQ.Models.ProjectStatus.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

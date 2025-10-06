@@ -1,0 +1,212 @@
+@page "/admin/departments"
+@using PeopleIQ.Data
+@inject PeopleIQContext Context
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Manage Departments</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">Manage Departments</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="4">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Departments</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                @foreach (var dept in departments)
+                {
+                    <a href="/admin/departments/@dept.Id" style="text-decoration: none; color: inherit;">
+                        <div style="padding: 10px; margin: 5px; border: 1px solid #ccc; cursor: pointer; background: white;">
+                            <div>@dept.Name</div>
+                            <div style="font-size: 12px; color: gray;">@dept.Projects.Count projects</div>
+                        </div>
+                    </a>
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    
+    <MudItem xs="12" md="8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.body1" Align="Align.Center">Click on a department to manage its projects</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+<MudDialog @bind-Visible="showProjectDialog">
+    <DialogContent>
+        <MudText Typo="Typo.h6" GutterBottom="true">@(editingProject.Id == 0 ? "Add New Project" : "Edit Project")</MudText>
+        <MudTextField @bind-Value="editingProject.Name" Label="Project Name" Required="true" />
+        <MudTextField @bind-Value="editingProject.Description" Label="Description" Lines="3" />
+        <MudNumericField @bind-Value="editingProject.Sort" Label="Sort Order" />
+        <MudSelect @bind-Value="editingProject.Status" Label="Status">
+            @foreach (var status in Enum.GetValues<PeopleIQ.Models.ProjectStatus>())
+            {
+                <MudSelectItem Value="status">@status</MudSelectItem>
+            }
+        </MudSelect>
+        <MudSelect @bind-Value="editingProject.Priority" Label="Priority">
+            @foreach (var priority in Enum.GetValues<PeopleIQ.Models.ProjectPriority>())
+            {
+                <MudSelectItem Value="priority">@priority</MudSelectItem>
+            }
+        </MudSelect>
+        <MudNumericField @bind-Value="editingProject.Progress" Label="Progress %" Min="0" Max="100" />
+        <MudDatePicker @bind-Date="startDate" Label="Start Date" />
+        <MudDatePicker @bind-Date="endDate" Label="End Date" />
+        <MudNumericField @bind-Value="editingProject.Budget" Label="Budget" Format="C" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelProject">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveProject">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<PeopleIQ.Models.Department> departments = new();
+    private PeopleIQ.Models.Department? selectedDepartment;
+    private PeopleIQ.Models.Project editingProject = new();
+    private bool showProjectDialog = false;
+    private DateTime? startDate;
+    private DateTime? endDate;
+
+    protected override async System.Threading.Tasks.Task OnInitializedAsync()
+    {
+        await LoadDepartments();
+    }
+
+    private async System.Threading.Tasks.Task LoadDepartments()
+    {
+        departments = await Context.Departments
+            .Include(d => d.Projects)
+            .Where(d => d.IsActive)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
+
+    private void SelectDepartment(int departmentId)
+    {
+        Navigation.NavigateTo($"/admin/departments/{departmentId}");
+    }
+
+    private void AddNewProject()
+    {
+        editingProject = new PeopleIQ.Models.Project 
+        { 
+            DepartmentId = selectedDepartment?.Id,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddMonths(12)
+        };
+        startDate = editingProject.StartDate;
+        endDate = editingProject.EndDate;
+        showProjectDialog = true;
+    }
+
+    private void EditProject(PeopleIQ.Models.Project project)
+    {
+        editingProject = new PeopleIQ.Models.Project
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Sort = project.Sort,
+            Status = project.Status,
+            Priority = project.Priority,
+            Progress = project.Progress,
+            Budget = project.Budget,
+            DepartmentId = project.DepartmentId,
+            StartDate = project.StartDate,
+            EndDate = project.EndDate,
+            CreatedAt = project.CreatedAt
+        };
+        startDate = project.StartDate;
+        endDate = project.EndDate;
+        showProjectDialog = true;
+    }
+
+    private async System.Threading.Tasks.Task SaveProject()
+    {
+        if (string.IsNullOrWhiteSpace(editingProject.Name))
+        {
+            Snackbar.Add("Please enter a project name", Severity.Warning);
+            return;
+        }
+
+        editingProject.StartDate = startDate ?? DateTime.Now;
+        editingProject.EndDate = endDate;
+
+        if (editingProject.Id == 0)
+        {
+            Context.Projects.Add(editingProject);
+        }
+        else
+        {
+            var project = await Context.Projects.FindAsync(editingProject.Id);
+            if (project != null)
+            {
+                project.Name = editingProject.Name;
+                project.Description = editingProject.Description;
+                project.Sort = editingProject.Sort;
+                project.Status = editingProject.Status;
+                project.Priority = editingProject.Priority;
+                project.Progress = editingProject.Progress;
+                project.Budget = editingProject.Budget;
+                project.StartDate = editingProject.StartDate;
+                project.EndDate = editingProject.EndDate;
+                project.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        await Context.SaveChangesAsync();
+        Snackbar.Add("Project saved successfully", Severity.Success);
+        showProjectDialog = false;
+        await LoadDepartments();
+        
+        if (selectedDepartment != null)
+        {
+            selectedDepartment = departments.FirstOrDefault(d => d.Id == selectedDepartment.Id);
+        }
+    }
+
+    private void CancelProject()
+    {
+        showProjectDialog = false;
+        editingProject = new PeopleIQ.Models.Project();
+    }
+
+    private async System.Threading.Tasks.Task DeleteProject(int projectId)
+    {
+        var project = await Context.Projects.FindAsync(projectId);
+        if (project != null)
+        {
+            Context.Projects.Remove(project);
+            await Context.SaveChangesAsync();
+            Snackbar.Add("Project deleted successfully", Severity.Success);
+            await LoadDepartments();
+            
+            if (selectedDepartment != null)
+            {
+                selectedDepartment = departments.FirstOrDefault(d => d.Id == selectedDepartment.Id);
+            }
+        }
+    }
+
+    private Color GetStatusColor(PeopleIQ.Models.ProjectStatus status)
+    {
+        return status switch
+        {
+            PeopleIQ.Models.ProjectStatus.Planning => Color.Info,
+            PeopleIQ.Models.ProjectStatus.InProgress => Color.Primary,
+            PeopleIQ.Models.ProjectStatus.OnHold => Color.Warning,
+            PeopleIQ.Models.ProjectStatus.Completed => Color.Success,
+            PeopleIQ.Models.ProjectStatus.Cancelled => Color.Error,
+            _ => Color.Default
+        };
+    }
+}

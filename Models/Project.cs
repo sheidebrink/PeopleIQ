@@ -28,6 +28,8 @@ public class Project
     [Column(TypeName = "decimal(18,2)")]
     public decimal? Budget { get; set; }
     
+    public int Sort { get; set; } = 0;
+    
     public int? DepartmentId { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
